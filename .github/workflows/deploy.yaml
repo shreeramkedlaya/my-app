@@ -1,0 +1,34 @@
+name: Deploy Application
+
+on:
+  push:
+    branches:
+      - main  # Trigger when changes are pushed to main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # Runs the job on an Ubuntu runner
+
+    steps:
+      - name: Checkout Code  # Fetches latest code from repo
+        uses: actions/checkout@v2
+
+      - name: Install SOPS and Helm  # Install dependencies
+        run: |
+	  curl -LO https://github.com/getsops/sops/releases/download/v3.9.4/sops-v3.9.4.linux.amd64
+	  mv sops-v3.9.4.linux.amd64 /usr/local/bin/sops
+	  chmod +x /usr/local/bin/sops
+	  curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+	  chmod 700 get_helm.sh
+	  ./get_helm.sh
+
+      - name: Decrypt Helm Secrets  # Decrypt secrets before deploying
+        run: |
+          sops -d -i secrets_enc.yaml > secrets_dec.yaml
+
+      - name: Deploy to Kubernetes using Helm  # Deploy application to Kubernetes
+        run: |
+          helm upgrade --install my-app ./my-app -f secrets.yaml
+      - name: Set up Kubernetes Access
+      	run: |
+      	  echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
