@@ -25,22 +25,17 @@ jobs:
       - name: Import GPG Key from Repo
         run: |
           gpg --batch --yes --import private-key.asc
-
+          gpg --batch --yes --passphrase-file gpg_pass.txt --import private-key.asc
       - name: Trust GPG Key  # Mark the key as trusted
         run: |
           KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | awk '/sec/{print $2}' | cut -d'/' -f2 | head -n 1)
-          echo -e "trust\n5\ny\nsave" | gpg --batch --command-fd 0 --edit-key "$KEY_ID"
-
-      - name: List Secret Keys  # Verify key import
-        run: gpg --list-secret-keys
+          echo -e "$KEY_ID:6:" | gpg --import-ownertrust  # Set key trust level to "Ultimate"
 
       - name: Decrypt Helm Secrets  # Decrypt secrets before deploying
         run: |
-          export SOPS_AGE_KEY="$GPG_PASSPHRASE"  # Passphrase for decryption
-          sops --decrypt --input-type yaml --output-type yaml secrets_enc.yaml > secrets_dec.yaml
-        env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-
+          chmod 600 passphrase.txt
+          sops -d secrets_enc.yaml > secrets_dec.yaml
+          
       - name: Deploy to Kubernetes using Helm  # Deploy application
         run: |
           helm upgrade --install my-app ./my-app -f secrets_dec.yaml
