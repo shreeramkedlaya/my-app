@@ -15,14 +15,16 @@ jobs:
 
       - name: Install SOPS and Helm  # Install dependencies
         run: |
-          sudo apt update
-          sudo apt install -y sops
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          curl -LO https://github.com/getsops/sops/releases/download/v3.9.4/sops-v3.9.4.linux.amd64
+          
+          mv sops-v3.9.4.linux.amd64 /usr/local/bin/sops
+          
+          chmod +x /usr/local/bin/sops
 
       - name: Decrypt Helm Secrets  # Decrypt secrets before deploying
         run: |
-          sops --decrypt secrets.enc.yaml > secrets.yaml
+          sops -d secrets_enc.yaml > secrets_dec.yaml
 
       - name: Deploy to Kubernetes using Helm  # Deploy application to Kubernetes
         run: |
-          helm upgrade --install my-app ./helm-chart -f secrets.yaml
+          helm upgrade --install my-app ./my-app -f secrets_enc.yaml
