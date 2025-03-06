@@ -20,6 +20,16 @@ jobs:
           mv sops-v3.9.4.linux.amd64 /usr/local/bin/sops
           
           chmod +x /usr/local/bin/sops
+      - name: Import GPG Key
+        run: |
+          echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --batch --yes --passphrase "$GPG_PASSPHRASE" --import
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      - name: Trust GPG Key
+        run: |
+          KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | awk '{print $2}' | cut -d'/' -f2)
+          echo -e "trust\n5\ny\nsave" | gpg --command-fd 0 --edit-key "$KEY_ID"
 
       - name: Decrypt Helm Secrets  # Decrypt secrets before deploying
         run: |
