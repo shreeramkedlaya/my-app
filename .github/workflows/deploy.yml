@@ -28,7 +28,7 @@ jobs:
           gpg --batch --yes --passphrase-file gpg_pass.txt --import private-key.asc
       - name: Trust GPG Key  # Mark the key as trusted
         run: |
-          chmod 600 passphrase.txt  # Secure the passphrase file
+          chmod 600 gpg_pass.txt  # Secure the passphrase file
           gpg --batch --yes --passphrase-file gpg_pass.txt --import private-key.asc  # Import private key
           FINGERPRINT=$(gpg --list-secret-keys --with-colons | awk -F: '/fpr/{print $10; exit}')
           echo "$FINGERPRINT:6:" | gpg --import-ownertrust  # Set key trust level to "Ultimate"
