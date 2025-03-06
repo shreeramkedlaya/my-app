@@ -16,26 +16,29 @@ jobs:
       - name: Install SOPS and Helm  # Install dependencies
         run: |
           curl -LO https://github.com/getsops/sops/releases/download/v3.9.4/sops-v3.9.4.linux.amd64
-          
-          mv sops-v3.9.4.linux.amd64 /usr/local/bin/sops
-          
-          chmod +x /usr/local/bin/sops
-      - name: Import GPG Key
+          sudo mv sops-v3.9.4.linux.amd64 /usr/local/bin/sops
+          sudo chmod +x /usr/local/bin/sops
+          sudo apt-get update && sudo apt-get install -y gnupg2 helm
+
+      - name: Import GPG Key from Repo
         run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --import
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --passphrase "$GPG_PASSPHRASE" --import
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-      - name: Trust GPG Key
+          gpg --batch --yes --import private-key.asc
+
+      - name: Trust GPG Key  # Mark the key as trusted
         run: |
           KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | awk '{print $2}' | cut -d'/' -f2)
-          echo -e "trust\n5\ny\nsave" | gpg --command-fd 0 --edit-key "$KEY_ID"
+          echo -e "trust\n5\ny\nsave" | gpg --batch --command-fd 0 --edit-key "$KEY_ID"
+
+      - name: List Secret Keys  # Verify key import
+        run: gpg --list-secret-keys
 
       - name: Decrypt Helm Secrets  # Decrypt secrets before deploying
         run: |
-          sops -d secrets_enc.yaml > secrets_dec.yaml
+          export SOPS_AGE_KEY="$GPG_PASSPHRASE"  # Passphrase for decryption
+          sops --decrypt --input-type yaml --output-type yaml secrets_enc.yaml > secrets_dec.yaml
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Deploy to Kubernetes using Helm  # Deploy application to Kubernetes
+      - name: Deploy to Kubernetes using Helm  # Deploy application
         run: |
-          helm upgrade --install my-app ./my-app -f secrets_enc.yaml
+          helm upgrade --install my-app ./my-app -f secrets_dec.yaml
