@@ -36,7 +36,7 @@ jobs:
 
       - name: Decrypt Helm Secrets  # Decrypt secrets before deploying
         run: |
-          chmod 600 passphrase.txt
+          chmod 600 gpg_pass.txt
           sops -d secrets_enc.yaml > secrets_dec.yaml
           
       - name: Deploy to Kubernetes using Helm  # Deploy application
