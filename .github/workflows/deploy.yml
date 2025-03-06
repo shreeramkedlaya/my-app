@@ -22,6 +22,7 @@ jobs:
           chmod +x /usr/local/bin/sops
       - name: Import GPG Key
         run: |
+          echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --import
           echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --batch --yes --passphrase "$GPG_PASSPHRASE" --import
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
