@@ -15,34 +15,41 @@ jobs:
 
       - name: Install SOPS and Helm  # Install dependencies
         run: |
+          sudo apt -y install gpg
           curl -LO https://github.com/getsops/sops/releases/download/v3.9.4/sops-v3.9.4.linux.amd64
           sudo mv sops-v3.9.4.linux.amd64 /usr/local/bin/sops
           sudo chmod +x /usr/local/bin/sops
-          sudo apt-get update && sudo apt-get install -y gnupg2 helm
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+          chmod 700 get_helm.sh
+          ./get_helm.sh
 
-      - name: Import GPG Key  # Import private key without passphrase (decryption will use it)
+      - name: Import GPG Key
         run: |
-          echo "$GPG_PRIVATE_KEY" | base64 --decode > private-key.asc
-          gpg --batch --yes --import private-key.asc
-          rm -f private-key.asc
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-
+          gpg --batch --gen-key <<EOF
+          Key-Type: RSA
+          Key-Length: 4096
+          Expire-Date: 0
+          Name-Real: vmuser
+          Name-Email: vmuser@123.com
+          %no-protection
+          %commit
+          EOF
       - name: Trust GPG Key  # Mark the key as trusted
         run: |
-          KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | awk '{print $2}' | cut -d'/' -f2)
-          echo -e "trust\n5\ny\nsave" | gpg --batch --command-fd 0 --edit-key "$KEY_ID"
-
-      - name: List Secret Keys  # Verify key import
-        run: gpg --list-secret-keys
 
       - name: Decrypt Helm Secrets  # Decrypt secrets before deploying
         run: |
-          export SOPS_AGE_KEY="$GPG_PASSPHRASE"  # Passphrase for decryption
-          sops --decrypt --input-type yaml --output-type yaml secrets_enc.yaml > secrets_dec.yaml
-        env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-
+          export GPG_TTY=$(tty)
+          chmod 600 private-key.asc
+          sops -d secrets_enc.yaml > secrets_dec.yaml
+          
       - name: Deploy to Kubernetes using Helm  # Deploy application
         run: |
           helm upgrade --install my-app ./my-app -f secrets_dec.yaml
+      - name: Run OWASP ZAP Scan
+        run: |
+          git clone https://github.com/The-DevSec-Blueprint/TIWAP.git
+          cd TIWAP
+          docker-compose up -d
+          docker pull zaproxy/zap-stable
+          docker run -v $(pwd):/zap/wrk/:rw --network="host" zaproxy/zap-stable zap-baseline.py -t https://172.0.0.2:8000 -r scan-report.html
