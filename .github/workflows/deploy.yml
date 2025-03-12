@@ -23,7 +23,7 @@ jobs:
           ./get_helm.sh
       - name: Import GPG Key
         run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 --decode > private-key.asc
+          echo "${{ vars.GPG_PRIVATE_KEY }}" | base64 --decode > private-key.asc
           gpg --import private-key.asc
           # Get full fingerprint
           FINGERPRINT=$(gpg --list-secret-keys --with-colons | awk -F: '/fpr/{print $10; exit}')
