@@ -38,8 +38,10 @@ jobs:
 
       - name: Encrypt Helm Secrets
         run: |
-          gpg --list-secret-keys --with-colons | awk -F: '/fpr/{print $10; exit}'
-          sops -e secrets.yaml > secrets_enc.yaml
+          FINGERPRINT=$(gpg --list-secret-keys --with-colons | awk -F: '/fpr/{print $10; exit}')
+          echo "Using GPG Key: $FINGERPRINT"
+          sops --pgp $FINGERPRINT -e secrets.yaml > secrets_enc.yaml
+          
       - name: Decrypt Helm Secrets  # Decrypt secrets before deploying
         run: |
           sops -d secrets_enc.yaml > secrets_dec.yaml
