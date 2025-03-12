@@ -35,9 +35,10 @@ jobs:
           
           # Ensure the key is correctly loaded
           gpg --list-secret-keys --keyid-format LONG
-          
+
       - name: Encrypt Helm Secrets
         run: |
+          gpg --list-secret-keys --with-colons | awk -F: '/fpr/{print $10; exit}'
           sops -e secrets.yaml > secrets_enc.yaml
       - name: Decrypt Helm Secrets  # Decrypt secrets before deploying
         run: |
