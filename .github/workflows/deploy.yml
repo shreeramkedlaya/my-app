@@ -12,7 +12,6 @@ jobs:
     steps:
       - name: Checkout Code  # Fetches latest code from repo
         uses: actions/checkout@v2
-
       - name: Install SOPS and Helm  # Install dependencies
         run: |
           sudo apt -y install gpg
@@ -22,12 +21,11 @@ jobs:
           curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
           chmod 700 get_helm.sh
           ./get_helm.sh
-
       - name: Import GPG Key
         run: |
-          chmod 600 private-key.asc  # Secure the private key file
-          gpg --batch --yes --import private-key.asc  # Import GPG key
-           # Get full fingerprint
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 --decode > private-key.asc
+          gpg --import private-key.asc
+          # Get full fingerprint
           FINGERPRINT=$(gpg --list-secret-keys --with-colons | awk -F: '/fpr/{print $10; exit}')
           
           # Trust the key as 'Ultimate'
@@ -35,10 +33,11 @@ jobs:
           
           # Ensure the key is correctly loaded
           gpg --list-secret-keys --keyid-format LONG
+      - name: Encrypt Helm Secrets
+        run: |
+          sops -e secrets.yaml > secrets_enc.yaml
       - name: Decrypt Helm Secrets  # Decrypt secrets before deploying
         run: |
-          export GPG_TTY=$(tty)
-          chmod 600 private-key.asc
           sops -d secrets_enc.yaml > secrets_dec.yaml
           
       - name: Deploy to Kubernetes using Helm  # Deploy application
