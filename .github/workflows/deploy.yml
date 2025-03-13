@@ -57,6 +57,9 @@ jobs:
           --decrypt secrets_enc.yaml > secrets_dec.yaml
         env:
           SOPS_PGP_FP: $(cat passphrase.txt)
+      - name: View Decrypted Secrets
+        run: cat secrets_dec.yaml
+
 
       - name: Deploy to Kubernetes using Helm # Deploy application
         run: |
