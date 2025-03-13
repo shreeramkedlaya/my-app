@@ -46,7 +46,9 @@ jobs:
 
       - name: Decrypt Helm Secrets # Decrypt secrets before deploying
         run: |
-          cp pubring.kbx /home/runner/.gnupg/pubring.gpg
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          gpg --list-secret-keys
           sops -d secrets_enc.yaml > secrets_dec.yaml
 
       - name: Deploy to Kubernetes using Helm # Deploy application
