@@ -50,11 +50,10 @@ jobs:
       #     sops -d secrets_enc.yaml > secrets_dec.yaml
       - name: Decrypt Helm Secrets using passphrase.txt
         run: |
-          sops --pgp-use-key=$(gpg --list-keys --with-colons | grep fpr | head -n 1 | cut -d: -f10) \
-          --input-type yaml \
-          --decrypt secrets_enc.yaml > secrets_dec.yaml
+          sops -d secrets_enc.yaml > secrets_dec.yaml
         env:
           SOPS_PGP_FP: $(cat passphrase.txt)
+          
       - name: View Decrypted Secrets
         run: cat secrets_dec.yaml
 
