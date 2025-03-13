@@ -43,16 +43,11 @@ jobs:
           fi
 
       - name: Decrypt Helm Secrets # Decrypt secrets before deploying
-        run: |
-          sops -d secrets_enc.yaml > secrets_dec.yaml
         env:
-          SOPS_GPG_EXEC: "gpg --batch --yes --passphrase '${{ secrets.GPG_PASSPHRASE }}'"
-          
-      # - name: Decrypt Helm Secrets using passphrase.txt
-      #   run: |
-      #     sops -d secrets_enc.yaml > secrets_dec.yaml
-      #   env:
-      #     SOPS_PGP_FP: ${{secrets.GPG_PASSPHRASE}}
+            SOPS_PGP_FP: ${{ secrets.PGP_KEY_FINGERPRINT }}
+            SOPS_GPG_EXEC: "gpg --batch --yes --passphrase '${{ secrets.GPG_PASSPHRASE }}'"
+        run: |
+          sops -d $SOPS_PGP_FP secrets_enc.yaml > secrets_dec.yaml
 
       - name: View Decrypted Secrets
         run: cat secrets_dec.yaml
