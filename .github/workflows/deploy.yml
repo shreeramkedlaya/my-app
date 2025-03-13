@@ -52,7 +52,7 @@ jobs:
         run: |
           sops -d secrets_enc.yaml > secrets_dec.yaml
         env:
-          SOPS_PGP_FP: $(cat passphrase.txt)
+          SOPS_PGP_FP: ${{secrets.GPG_PASSPHRASE}}
           
       - name: View Decrypted Secrets
         run: cat secrets_dec.yaml
