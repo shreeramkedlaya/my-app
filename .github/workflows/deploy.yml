@@ -14,8 +14,6 @@ jobs:
         uses: actions/checkout@v2
       - name: Install SOPS and Helm # Install dependencies
         run: |
-          sudo apt update
-          sudo apt -y install gnupg
           curl -LO https://github.com/getsops/sops/releases/download/v3.9.4/sops-v3.9.4.linux.amd64
           sudo mv sops-v3.9.4.linux.amd64 /usr/local/bin/sops
           sudo chmod +x /usr/local/bin/sops
@@ -44,10 +42,21 @@ jobs:
             echo "Warning: secrets.yaml does not exist. Skipping encryption."
           fi
 
-      - name: Decrypt Helm Secrets # Decrypt secrets before deploying
+      # - name: Decrypt Helm Secrets # Decrypt secrets before deploying
+      #   run: |
+      #     cat > passphrase.txt << EOF
+      #     i dont remember
+      #     EOF
+      #     sops -d secrets_enc.yaml > secrets_dec.yaml
+      - name: Decrypt Helm Secrets using passphrase.txt
         run: |
-          gpg --list-secret-keys
-          sops -d secrets_enc.yaml > secrets_dec.yaml
+          export SOPS_GPG_EXEC=$(which gpg)
+          export GPG_TTY=$(tty)
+          sops --pgp-use-key=$(gpg --list-keys --with-colons | grep fpr | head -n 1 | cut -d: -f10) \
+          --input-type yaml \
+          --decrypt secrets_enc.yaml > secrets_dec.yaml
+        env:
+          SOPS_PGP_FP: $(cat passphrase.txt)
 
       - name: Deploy to Kubernetes using Helm # Deploy application
         run: |
