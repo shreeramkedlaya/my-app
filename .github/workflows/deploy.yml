@@ -42,11 +42,9 @@ jobs:
             echo "Warning: secrets.yaml does not exist. Skipping encryption."
           fi
 
-      - name: Decrypt Helm Secrets # Decrypt secrets before deploying
-        env:
-            SOPS_PGP_FP: ${{ secrets.PGP_KEY_FINGERPRINT }}
-            SOPS_GPG_EXEC: "gpg --batch --yes --passphrase '${{ secrets.GPG_PASSPHRASE }}'"
+      - name: Decrypt Helm Secrets # Decrypt secrets before deploying  
         run: |
+          gpg --batch --yes --passphrase '${{ secrets.GPG_PASSPHRASE }}'
           sops -d $SOPS_PGP_FP secrets_enc.yaml > secrets_dec.yaml
 
       - name: View Decrypted Secrets
