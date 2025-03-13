@@ -44,19 +44,18 @@ jobs:
 
       - name: Decrypt Helm Secrets # Decrypt secrets before deploying
         run: |
-          cat > passphrase.txt << EOF
-          i dont remember
-          EOF
           sops -d secrets_enc.yaml > secrets_dec.yaml
+        env:
+          SOPS_GPG_EXEC: "gpg --batch --yes --passphrase '${{ secrets.GPG_PASSPHRASE }}'"
+          
       # - name: Decrypt Helm Secrets using passphrase.txt
       #   run: |
       #     sops -d secrets_enc.yaml > secrets_dec.yaml
       #   env:
       #     SOPS_PGP_FP: ${{secrets.GPG_PASSPHRASE}}
-          
+
       - name: View Decrypted Secrets
         run: cat secrets_dec.yaml
-
 
       - name: Deploy to Kubernetes using Helm # Deploy application
         run: |
