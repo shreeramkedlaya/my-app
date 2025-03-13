@@ -26,7 +26,6 @@ jobs:
       - name: Import GPG Key
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 --decode | gpg --import --batch --yes
-          gpg --list-secret-keys # Optional: To verify that keys are imported
           gpg --list-keys       # Optional: To list public keys
 
           # Get full fingerprint
@@ -34,9 +33,6 @@ jobs:
 
           # Trust the key as 'Ultimate'
           echo "$FINGERPRINT:6:" | gpg --import-ownertrust
-
-          # Ensure the key is correctly loaded
-          gpg --list-secret-keys --keyid-format LONG
 
       - name: Encrypt Helm Secrets
         run: |
