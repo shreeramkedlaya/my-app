@@ -50,8 +50,6 @@ jobs:
       #     sops -d secrets_enc.yaml > secrets_dec.yaml
       - name: Decrypt Helm Secrets using passphrase.txt
         run: |
-          export SOPS_GPG_EXEC=$(which gpg)
-          export GPG_TTY=$(tty)
           sops --pgp-use-key=$(gpg --list-keys --with-colons | grep fpr | head -n 1 | cut -d: -f10) \
           --input-type yaml \
           --decrypt secrets_enc.yaml > secrets_dec.yaml
