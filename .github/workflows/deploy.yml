@@ -3,16 +3,16 @@ name: Deploy Application
 on:
   push:
     branches:
-      - main  # Trigger when changes are pushed to main
+      - main # Trigger when changes are pushed to main
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # Runs the job on an Ubuntu runner
+    runs-on: ubuntu-latest # Runs the job on an Ubuntu runner
 
     steps:
-      - name: Checkout Code  # Fetches latest code from repo
+      - name: Checkout Code # Fetches latest code from repo
         uses: actions/checkout@v2
-      - name: Install SOPS and Helm  # Install dependencies
+      - name: Install SOPS and Helm # Install dependencies
         run: |
           sudo apt update
           sudo apt -y install gnupg
@@ -25,14 +25,16 @@ jobs:
 
       - name: Import GPG Key
         run: |
-          gpg --batch --import private-key.asc
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --batch --yes
+          gpg --list-secret-keys # Optional: To verify that keys are imported
+          gpg --list-keys       # Optional: To list public keys
 
           # Get full fingerprint
           FINGERPRINT=$(gpg --list-secret-keys --with-colons | awk -F: '/fpr/{print $10; exit}')
-          
+
           # Trust the key as 'Ultimate'
           echo "$FINGERPRINT:6:" | gpg --import-ownertrust
-          
+
           # Ensure the key is correctly loaded
           gpg --list-secret-keys --keyid-format LONG
 
@@ -46,14 +48,14 @@ jobs:
             echo "Warning: secrets.yaml does not exist. Skipping encryption."
           fi
 
-      - name: Decrypt Helm Secrets  # Decrypt secrets before deploying
+      - name: Decrypt Helm Secrets # Decrypt secrets before deploying
         run: |
           sops -d secrets_enc.yaml > secrets_dec.yaml
-          
-      - name: Deploy to Kubernetes using Helm  # Deploy application
+
+      - name: Deploy to Kubernetes using Helm # Deploy application
         run: |
           helm upgrade --install my-app ./my-app -f secrets_dec.yaml
-    
+
       - name: Run OWASP ZAP Scan
         run: |
           git clone https://github.com/The-DevSec-Blueprint/TIWAP.git
