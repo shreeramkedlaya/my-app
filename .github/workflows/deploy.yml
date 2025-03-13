@@ -44,6 +44,7 @@ jobs:
 
       - name: Decrypt Helm Secrets # Decrypt secrets before deploying  
         run: |
+          echo ${{ secrets.GPG_PASSPHRASE }}
           gpg --batch --yes --passphrase '${{ secrets.GPG_PASSPHRASE }}'
           sops -d $SOPS_PGP_FP secrets_enc.yaml > secrets_dec.yaml
 
