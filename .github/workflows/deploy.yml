@@ -46,8 +46,6 @@ jobs:
 
       - name: Decrypt Helm Secrets # Decrypt secrets before deploying
         run: |
-          mkdir -p ~/.gnupg
-          chmod 700 ~/.gnupg
           gpg --list-secret-keys
           sops -d secrets_enc.yaml > secrets_dec.yaml
 
